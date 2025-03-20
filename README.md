@@ -20,15 +20,17 @@ This spec uses pseudocode that hopefully resembles lua. The format is very simpl
 
 ```typescript
 {
-    [fluid_id: string] = {
-        // the amount of fluid to level maintain in litres
-        amount = number;
-        // the priority of this fluid (lower is higher, default is 1)
-        priority = number;
-        // the number of pumps to allocate to this fluid when pumping it
-        pumps = number;
+    fluids = {
+        [fluid_id: string] = {
+            // the amount of fluid to level maintain in litres
+            amount = number;
+            // the priority of this fluid (lower is higher, default is 1)
+            priority = number;
+            // the number of pumps to allocate to this fluid when pumping it
+            pumps = number;
+        }
     }
-};
+}
 ```
 
 When a fluid needs to be pumped, the highest priority fluids will be pumped first. The `pumps` value controls how many 'parallels' the fluid gets; a value of 2 will allocate 2 parallels to it (note that MK2 and MK3 pumps have 4 parallels each and may pump 4 different fluids). The script will allocate as many parallels as it can and will shuttle fluids of equal priority occasionally if there are too few pumps available.
