@@ -194,6 +194,24 @@ for _, text in pairs(status_lines) do
 end
 
 if event.pull(config.interval or 10, "interrupt") then
+    logger.info("interrupted: shutting down pumps")
+    
+    local pending = {}
+
+    for _, pump in pairs(pumps) do
+        local task = pump.setFluid(nil)
+
+        if task then table.insert(pending, task) end
+    end
+
+    table.sort(pending, function (a, b) return a.deadline < b.deadline end)
+
+    for _, task in pairs(pending) do
+        os.sleep(os.time() / 72 - task.deadline)
+    
+        task.op()
+    end
+    
     return
 end
 
