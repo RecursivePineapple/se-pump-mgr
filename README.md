@@ -29,7 +29,9 @@ This spec uses pseudocode that hopefully resembles lua. The format is very simpl
             // the number of pumps to allocate to this fluid when pumping it
             pumps = number;
         }
-    }
+    },
+    // the number of seconds between ME system polls/pump updates (default 10)
+    interval = number;
 }
 ```
 
