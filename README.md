@@ -1,6 +1,6 @@
 ## Space Elevator Pumping Module Manager Script
 
-A script which configures your pumping modules to level maintain their fluids. Can work with any number of pumps and requires very little configuration.
+A script which automatically configures your space pumping modules to level maintain a set of user-configurable fluids. It can work with any number of pumps and requires very little configuration.
 
 ## Setup
 
@@ -35,4 +35,4 @@ This spec uses pseudocode that hopefully resembles lua. The format is very simpl
 }
 ```
 
-When a fluid needs to be pumped, the highest priority fluids will be pumped first. The `pumps` value controls how many 'parallels' the fluid gets; a value of 2 will allocate 2 parallels to it (note that MK2 and MK3 pumps have 4 parallels each and may pump 4 different fluids). The script will allocate as many parallels as it can and will shuttle fluids of equal priority occasionally if there are too few pumps available.
+When a fluid needs to be pumped, the highest priority fluids will be pumped first. The `pumps` value controls how many 'parallels' the fluid gets; a value of 2 will allocate 2 parallels to it (note that MK2 and MK3 pumps have 4 parallels each and may pump 4 different fluids). The script will allocate as many parallels as it can. If there are too few pumps available, the script will shuffle fluids of equal priority every interval. If you have a priority-0 fluid with 2 parallels and 2 priority-1 fluids with 1 parallel but you only have 3 pumps, the script will pump two parallels of the priority-0 fluid and a random priority-1 fluid (changes periodically).
