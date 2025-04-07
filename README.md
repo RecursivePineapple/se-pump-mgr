@@ -2,6 +2,8 @@
 
 A script which automatically configures your space pumping modules to level maintain a set of user-configurable fluids. It can work with any number of pumps and requires very little configuration.
 
+Important note: this script requires a nightly GTNH release to function, since it relies on two newly added functions that allow computers to modify TT parameters.
+
 ## Setup
 
 ![Example Setup](images/2025-03-20_15.10.05.png)
