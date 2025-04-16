@@ -71,7 +71,8 @@ function mk_pump(proxy, tier, index)
                     if fluid[2] ~= proxy.getParameters(index, 1) then
                         proxy.setParameters(index, 1, fluid[2])
                     end
-
+                end,
+                post = function()
                     proxy.setWorkAllowed(true)
                 end
             }
@@ -173,6 +174,10 @@ for _, task in pairs(pending) do
     task.op()
 end
 
+for _, task in pairs(pending) do
+    task.post()
+end
+
 local status_lines = {}
 
 for fluid, status in pairs(status) do
@@ -210,6 +215,10 @@ if event.pull(config.interval or 10, "interrupt") then
         os.sleep(os.time() / 72 - task.deadline)
     
         task.op()
+    end
+    
+    for _, task in pairs(pending) do
+        task.post()
     end
     
     return
