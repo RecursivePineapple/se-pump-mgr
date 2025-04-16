@@ -147,7 +147,7 @@ end
 
 to_pump = utils.shuffle(to_pump)
 
-table.sort(to_pump, function (a, b) return a.priority > b.priority end)
+table.sort(to_pump, function (a, b) return a.priority < b.priority end)
 
 local i = 1
 
