@@ -92,14 +92,14 @@ for addr, _ in pairs(component.list("gt_machine")) do
         table.insert(pumps, mk_pump(proxy, 1, 0))
     elseif name == "projectmodulepumpt2" then
         table.insert(pumps, mk_pump(proxy, 2, 0))
-        table.insert(pumps, mk_pump(proxy, 2, 1))
         table.insert(pumps, mk_pump(proxy, 2, 2))
-        table.insert(pumps, mk_pump(proxy, 2, 3))
+        table.insert(pumps, mk_pump(proxy, 2, 4))
+        table.insert(pumps, mk_pump(proxy, 2, 6))
     elseif name == "projectmodulepumpt3" then
         table.insert(pumps, mk_pump(proxy, 3, 0))
-        table.insert(pumps, mk_pump(proxy, 3, 1))
         table.insert(pumps, mk_pump(proxy, 3, 2))
-        table.insert(pumps, mk_pump(proxy, 3, 3))
+        table.insert(pumps, mk_pump(proxy, 3, 4))
+        table.insert(pumps, mk_pump(proxy, 3, 6))
     end
 end
 
