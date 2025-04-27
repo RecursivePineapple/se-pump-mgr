@@ -13,6 +13,7 @@ Important note: this script requires a nightly GTNH release to function, since i
 2. Install OpenOS & [OPPM](https://ocdoc.cil.li/tutorial:program:oppm) on the computer (requires internet card)
 3. Run `oppm register RecursivePineapple/se-pump-mgr`
 4. Run `oppm install se-pump-mgr`
+5. (Optional) Run `cp /etc/se-pump-mgr/fluids-example.cfg /etc/se-pump-mgr/fluids.cfg`
 5. Edit `/etc/se-pump-mgr/fluids.cfg` and set up your fluids
 6. Run `se_pump_mgr` and optionally configure it to auto start (by adding it to your `/home/.shrc` file)
 
