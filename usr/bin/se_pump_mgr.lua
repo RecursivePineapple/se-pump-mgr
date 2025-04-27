@@ -24,12 +24,14 @@ local logger = logging({
 local config = utils.load("/etc/se-pump-mgr/fluids.cfg") or {}
 
 if not config.fluids then
-    error("fluids to maintain not configured in /etc/se-pump-mgr/fluids.cfg")
+    logger.error("fluids to maintain not configured in /etc/se-pump-mgr/fluids.cfg")
+    return
 end
 
 for fluid, _ in pairs(config.fluids) do
     if not fluids[fluid] then
-        error("could not find fluid: " .. fluid)
+        logger.error("could not find fluid: " .. fluid)
+        return
     end
 end
 

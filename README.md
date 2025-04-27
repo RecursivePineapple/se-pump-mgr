@@ -7,7 +7,7 @@ Important note: this script requires a nightly GTNH release to function, since i
 ## Setup
 
 ![Example Setup](images/2025-03-20_15.10.05.png)
-![Program Working](images/2025-03-20_15.23.27.png)
+![Program Working](images/image.png)
 
 1. Connect a computer to your pumping modules via an adapter (MFUs recommended for clean setups). The computer must also be connected to a full block dual interface via an adapter (so that it can scan your network for fluids).
 2. Install OpenOS & [OPPM](https://ocdoc.cil.li/tutorial:program:oppm) on the computer (requires internet card)
