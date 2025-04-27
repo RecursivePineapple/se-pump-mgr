@@ -11,6 +11,7 @@ local event = require("event")
 local sides = require("sides")
 local colors = require("colors")
 local term = require("term")
+local math = require("math")
 
 local logging = require("se_pump_mgr.logging")
 local utils = require("se_pump_mgr.utils")
@@ -34,16 +35,50 @@ end
 
 local lookup = {}
 
+lookup[0] = nil
+
 for fluid, ids in pairs(fluids) do
     lookup[ids[1] * 10 + ids[2]] = fluid
 end
 
-::start::
+function comparing(...)
+    local keys = table.pack(...)
 
-function mk_pump(proxy, tier, index)
+    return function(a, b)
+        for i, value in pairs(keys) do
+            if i ~= "n" then
+                local inv = false
+
+                local v2 = value
+
+                if value:sub(1, 1) == "-" then
+                    v2 = v2:sub(2)
+                    inv = true
+                end
+
+                local va = a[v2]
+                local vb = b[v2]
+
+                if va ~= vb then
+                    if inv then
+                        return va > vb
+                    else
+                        return va < vb
+                    end
+                end
+            end
+        end
+
+        return false
+    end
+end
+
+function mk_pump(proxy, tier, index, pump_number)
     local this = {
         proxy = proxy,
-        tier = tier
+        tier = tier,
+        index = index,
+        pump_number = pump_number
     }
 
     function this.getFluid()
@@ -51,7 +86,7 @@ function mk_pump(proxy, tier, index)
     end
 
     function this.setFluid(fluid)
-        fluid = fluid and fluids[fluid] or {0, 0}
+        fluid = fluid and fluids[fluid] or {0, 0, "Nothing"}
 
         if fluid[1] ~= proxy.getParameters(index, 0) or fluid[2] ~= proxy.getParameters(index, 1) then
             proxy.setWorkAllowed(false)
@@ -59,6 +94,8 @@ function mk_pump(proxy, tier, index)
             return {
                 deadline = (proxy.getWorkMaxProgress() - proxy.getWorkProgress() + 2) / 20 + os.time() / 72,
                 op = function()
+                    logger.info("Setting pump " .. pump_number .. ":" .. index .. " to pump " .. fluid[3])
+
                     for i = 1, 20 do
                         if not proxy.isMachineActive() then break end
                         os.sleep(0.05)
@@ -82,7 +119,22 @@ function mk_pump(proxy, tier, index)
     return this
 end
 
+function run_tasks(pending)
+    table.sort(pending, comparing("deadline"))
+    
+    for _, task in pairs(pending) do
+        task.op()
+    end
+    
+    for _, task in pairs(pending) do
+        task.post()
+    end
+end
+
+::start::
+
 local pumps = {}
+local pump_number = 1
 
 for addr, _ in pairs(component.list("gt_machine")) do
     local proxy = component.proxy(addr)
@@ -90,21 +142,23 @@ for addr, _ in pairs(component.list("gt_machine")) do
     local name = proxy.getName()
 
     if name == "projectmodulepumpt1" then
-        table.insert(pumps, mk_pump(proxy, 1, 0))
+        table.insert(pumps, mk_pump(proxy, 1, 0, pump_number))
     elseif name == "projectmodulepumpt2" then
-        table.insert(pumps, mk_pump(proxy, 2, 0))
-        table.insert(pumps, mk_pump(proxy, 2, 2))
-        table.insert(pumps, mk_pump(proxy, 2, 4))
-        table.insert(pumps, mk_pump(proxy, 2, 6))
+        table.insert(pumps, mk_pump(proxy, 2, 0, pump_number))
+        table.insert(pumps, mk_pump(proxy, 2, 2, pump_number))
+        table.insert(pumps, mk_pump(proxy, 2, 4, pump_number))
+        table.insert(pumps, mk_pump(proxy, 2, 6, pump_number))
     elseif name == "projectmodulepumpt3" then
-        table.insert(pumps, mk_pump(proxy, 3, 0))
-        table.insert(pumps, mk_pump(proxy, 3, 2))
-        table.insert(pumps, mk_pump(proxy, 3, 4))
-        table.insert(pumps, mk_pump(proxy, 3, 6))
+        table.insert(pumps, mk_pump(proxy, 3, 0, pump_number))
+        table.insert(pumps, mk_pump(proxy, 3, 2, pump_number))
+        table.insert(pumps, mk_pump(proxy, 3, 4, pump_number))
+        table.insert(pumps, mk_pump(proxy, 3, 6, pump_number))
     end
+
+    pump_number = pump_number + 1
 end
 
-table.sort(pumps, function (a, b) return a.tier > b.tier end)
+table.sort(pumps, comparing("-tier", "pump_number", "index"))
 
 local to_pump = {}
 local status = {}
@@ -128,10 +182,13 @@ for name, fluid_cfg in pairs(config.fluids) do
         amount = amounts[name],
         target = fluid_cfg.amount,
         wanted = 0,
-        provided = 0
+        provided = 0,
+        priority = fluid_cfg.priority,
     }
 
     if s.amount < fluid_cfg.amount then
+        logger.info("Low fluid detected: " .. fluids[name][3] .. " (has " .. utils.format_int(s.amount) .. "L, needs " .. utils.format_int(fluid_cfg.amount) .. "L)")
+
         s.wanted = fluid_cfg.pumps or 1
 
         for i = 1, (fluid_cfg.pumps or 1) do
@@ -147,11 +204,13 @@ end
 
 to_pump = utils.shuffle(to_pump)
 
-table.sort(to_pump, function (a, b) return a.priority < b.priority end)
+table.sort(to_pump, comparing("priority"))
 
 local i = 1
 
 local pending = {}
+
+logger.info("Updating pumps")
 
 for _, pump in pairs(pumps) do
     local fluid = to_pump[i]
@@ -166,17 +225,9 @@ for _, pump in pairs(pumps) do
     end
 end
 
-table.sort(pending, function (a, b) return a.deadline < b.deadline end)
+run_tasks(pending)
 
-for _, task in pairs(pending) do
-    os.sleep(os.time() / 72 - task.deadline)
-
-    task.op()
-end
-
-for _, task in pairs(pending) do
-    task.post()
-end
+logger.info("Pumps started")
 
 local status_lines = {}
 
@@ -194,12 +245,34 @@ table.sort(status_lines, function (a, b) return a.fluid < b.fluid end)
 
 term.clear()
 
+print("Current Fluid Status:")
+print()
+
 for _, text in pairs(status_lines) do
     print(text.text)
 end
 
+print()
+print("Current Pump Status:")
+print()
+
+table.sort(pumps, comparing("pump_number", "index"))
+
+for _, pump in pairs(pumps) do
+    local fluid = pump.getFluid()
+
+    local fluid_name = fluid and fluids[fluid][3] or "Nothing"
+
+    print("Pump " .. pump.pump_number .. " (parallel " .. math.floor(pump.index / 2) .. ", MK" .. pump.tier .. "): " .. fluid_name)
+end
+
+print()
+print(string.format("Last updated at %4.2fs Interval: %ds", os.time() / 72 - logger.settings.start_time, config.interval or 10))
+print()
+
 if event.pull(config.interval or 10, "interrupt") then
-    logger.info("interrupted: shutting down pumps")
+    logger.info("Interrupted: Shutting down pumps")
+    print()
     
     local pending = {}
 
@@ -209,18 +282,8 @@ if event.pull(config.interval or 10, "interrupt") then
         if task then table.insert(pending, task) end
     end
 
-    table.sort(pending, function (a, b) return a.deadline < b.deadline end)
+    run_tasks(pending)
 
-    for _, task in pairs(pending) do
-        os.sleep(os.time() / 72 - task.deadline)
-    
-        task.op()
-    end
-    
-    for _, task in pairs(pending) do
-        task.post()
-    end
-    
     return
 end
 
